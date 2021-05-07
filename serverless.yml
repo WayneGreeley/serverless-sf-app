@@ -1,0 +1,89 @@
+service: serverless-sf-app
+
+plugins:
+  - serverless-step-functions
+  - serverless-webpack
+
+custom:
+  bucket: "your-bucket-name-has-to-be-unique-2021-05-06"
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: dev # Default stage to be used. Default is "dev"
+  region: us-east-1 # Default region to be used. Default is "us-east-1"
+  tracing: true # enable tracing
+  memorySize: 256
+  timeout: 10
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:PutObjectAcl
+      Resource: "arn:aws:s3:::${self:custom.bucket}/*"
+
+functions:
+  ValidateInput:
+    handler: index.validate
+  GetOptions:
+    handler: index.getoptions
+  GetRecommended:
+    handler: index.recommend
+  ChooseOption:
+    handler: index.choose
+  CalcQuote:
+    handler: index.calc
+  StoreInS3:
+    handler: index.save
+    environment:
+      BUCKET: ${self:custom.bucket}
+
+stepFunctions:
+  stateMachines:
+    MyExampleStepFunction:
+      name: my-example
+      events:
+        - http:
+            path: /quoterequest/
+            method: POST
+
+      definition:
+        Comment: Demonstrate step functions
+        StartAt: ValidateInput
+        States:
+
+          ValidateInput:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [ValidateInputLambdaFunction, Arn]
+            Next: GetOptions
+
+          GetOptions:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [GetOptionsLambdaFunction, Arn]
+            Next: GetRecommended
+
+          GetRecommended:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [GetRecommendedLambdaFunction, Arn]
+            Next: ChooseOption
+
+          ChooseOption:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [ChooseOptionLambdaFunction, Arn]
+            Next: CalcQuote
+
+          CalcQuote:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [CalcQuoteLambdaFunction, Arn]
+            Next: StoreInS3
+
+          StoreInS3:
+            Type: Task
+            Resource: 
+              Fn::GetAtt: [StoreInS3LambdaFunction, Arn]
+            End: true

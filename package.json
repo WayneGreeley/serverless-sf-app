@@ -1,0 +1,23 @@
+{
+  "name": "serverless-sf-app",
+  "version": "1.0.0",
+  "description": "serverless step function app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WayneGreeley/serverless-sf-app.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "node-uuid": "^1.4.8",
+    "serverless": "^2.40.0",
+    "serverless-step-functions": "^2.30.0",
+    "serverless-webpack": "^5.4.2",
+    "webpack": "^5.36.2",
+    "webpack-node-externals": "^3.0.0"
+  }
+}
