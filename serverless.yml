@@ -5,7 +5,7 @@ plugins:
   - serverless-webpack
 
 custom:
-  bucket: "your-bucket-name-has-to-be-unique-2021-05-06"
+  bucket: "your-bucket-name-has-to-be-unique-2021-05-08"
 
 provider:
   name: aws
@@ -21,7 +21,13 @@ provider:
         - s3:PutObject
         - s3:PutObjectAcl
       Resource: "arn:aws:s3:::${self:custom.bucket}/*"
+  s3:
+    logBucket:
+      name: ${self:custom.bucket}
 
+      # TODO add fail logic/state
+      # TODO make synconious
+      # TODO add axios
 functions:
   ValidateInput:
     handler: index.validate
@@ -56,34 +62,62 @@ stepFunctions:
             Type: Task
             Resource: 
               Fn::GetAtt: [ValidateInputLambdaFunction, Arn]
+            Catch:
+            - ErrorEquals:
+              - States.ALL
+              Next: FailState
             Next: GetOptions
 
           GetOptions:
             Type: Task
             Resource: 
               Fn::GetAtt: [GetOptionsLambdaFunction, Arn]
+            Catch:
+            - ErrorEquals:
+              - States.ALL
+              Next: FailState
             Next: GetRecommended
 
           GetRecommended:
             Type: Task
             Resource: 
               Fn::GetAtt: [GetRecommendedLambdaFunction, Arn]
+            Catch:
+            - ErrorEquals:
+              - States.ALL
+              Next: FailState
             Next: ChooseOption
 
           ChooseOption:
             Type: Task
             Resource: 
               Fn::GetAtt: [ChooseOptionLambdaFunction, Arn]
+            Catch:
+            - ErrorEquals:
+              - States.ALL
+              Next: FailState
             Next: CalcQuote
 
           CalcQuote:
             Type: Task
             Resource: 
               Fn::GetAtt: [CalcQuoteLambdaFunction, Arn]
+            Catch:
+            - ErrorEquals:
+              - States.ALL
+              Next: FailState
             Next: StoreInS3
 
           StoreInS3:
             Type: Task
             Resource: 
               Fn::GetAtt: [StoreInS3LambdaFunction, Arn]
+            Catch:
+            - ErrorEquals:
+              - States.ALL
+              Next: FailState
             End: true
+
+          Fail State:
+            Type: Fail
+            Cause: "Unknown"
